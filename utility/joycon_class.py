@@ -41,6 +41,7 @@ class JoyController:
         self.joyconTransformNode = slicer.vtkMRMLTransformNode()
         self.joyconTransformNode.SetName('joyconTransformation')
         slicer.mrmlScene.AddNode(self.joyconTransformNode)
+        #self.modelNode = slicer.util.loadModel('/Users/takakiyoshiroshi/Desktop/slicer3d_model/joyconR/blueParts.obj')
         self.modelNode = slicer.util.loadModel('/Users/takakiyoshiroshi/Desktop/slicer3d_model/joyconR/blueParts.obj')
         self.modelDisplayNode = self.modelNode.GetDisplayNode()
         self.modelDisplayNode.SetColor(0.5, 0.5, 0.5)

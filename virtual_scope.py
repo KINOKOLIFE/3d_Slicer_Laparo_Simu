@@ -62,16 +62,19 @@ class virtual_scopeWidget(ScriptedLoadableModuleWidget):
         self.camera = self.cameraNode.GetCamera()
         self.cameraNode.ResetClippingRange()
         
-        self.scope0 = endoscope_class.Hopkins0()
+        Hopkins0 = endoscope_class.Hopkins0()
+        Hopkins30 = endoscope_class.Hopkins30()
+        Flexible = endoscope_class.Frexible()
         
-        self.scope0.show()
+        self.deviceList = [Hopkins0, Hopkins30, Flexible]
+        self.deviceIndex = 0
         
     #----perspective
         self.camera_3Node = slicer.util.getNode('vtkMRMLCameraNode3')
         self.camera_3Node.ResetClippingRange()
     #--------camera port
         self.camera_port = camera_port_Class.Camera_Port()
-        self.camera_port_forceps = camera_port_Class.Camera_Port2()
+        self.instrument_port = camera_port_Class.Camera_Port2()
         
     #-------- update every 20msec
         self.timer = qt.QTimer()
@@ -85,11 +88,11 @@ class virtual_scopeWidget(ScriptedLoadableModuleWidget):
     def update(self):
         self.mat, camera_port_matrix, s = self.joyController.update(self.camera_port.port_position)
         self.camera_port.update(camera_port_matrix)  
-        self.tracking_camera.update(self.mat, self.camera_2)
-        self.scope0.update(self.mat, self.camera, s)
+        #self.tracking_camera.update(self.mat, self.camera_2)
+        self.deviceList[self.deviceIndex].update(self.mat, self.camera, s)
         
-        mat1, mat2  = self.joyController_RED_L.update(self.camera_port_forceps.port_position)
-        self.camera_port_forceps.update(mat2)  
+        mat1, mat2  = self.joyController_RED_L.update(self.instrument_port.port_position)
+        self.instrument_port.update(mat2)  
         
         self.cameraNode.ResetClippingRange()
         
@@ -125,9 +128,29 @@ class virtual_scopeWidget(ScriptedLoadableModuleWidget):
         button_L_RED.toggled.connect(self.button_L_RED_toggled)
         sampleFormLayout.addRow("joycon: ", raw1_layout )   
         #----カメラポート
+        horizen_layout1 = qt.QHBoxLayout()
         button_port_setter = qt.QPushButton("set") 
         button_port_setter.clicked.connect(self.button_port_setter_toggled)
-        sampleFormLayout.addRow("port position set: ", button_port_setter ) 
+        button_port_up = qt.QPushButton("up") 
+        button_port_up.clicked.connect(self.button_port_up_toggled)
+        button_port_down = qt.QPushButton("down") 
+        button_port_down.clicked.connect(self.button_port_down_toggled)
+        horizen_layout1.addWidget(button_port_setter)
+        horizen_layout1.addWidget(button_port_up)
+        horizen_layout1.addWidget(button_port_down)
+        sampleFormLayout.addRow("camera port : ", horizen_layout1 ) 
+        #----インスツルメントポート
+        horizen_layout2 = qt.QHBoxLayout()
+        button_instrument_setter = qt.QPushButton("set") 
+        button_instrument_setter.clicked.connect(self.button_instrument_setter_toggled)
+        button_instrument_up = qt.QPushButton("up") 
+        button_instrument_up.clicked.connect(self.button_instrument_up_toggled)
+        button_instrument_down = qt.QPushButton("down") 
+        button_instrument_down.clicked.connect(self.button_instrument_down_toggled)
+        horizen_layout2.addWidget(button_instrument_setter)
+        horizen_layout2.addWidget(button_instrument_up)
+        horizen_layout2.addWidget(button_instrument_down)
+        sampleFormLayout.addRow("instrument port : ", horizen_layout2 ) 
         # skin nodeの選択    
         seglayout = qt.QHBoxLayout()
         segmentSelector = slicer.qMRMLNodeComboBox()
@@ -155,7 +178,14 @@ class virtual_scopeWidget(ScriptedLoadableModuleWidget):
         combo.addItem('10mm Rigid 30deg')
         combo.addItem('10mm flexible')
         sampleFormLayout.addRow("scope type:", combo)
-        #combo.currentIndexChanged.connect(self.device_changed)
+        combo.currentIndexChanged.connect(self.device_changed)
+        self.device_changed(0)
+    
+    def device_changed(self, index):
+        for device in self.deviceList:
+            device.hide()
+        self.deviceIndex = index
+        self.deviceList[self.deviceIndex].show()
 
     def button_R_BLUE_toggled(self):
         self.button_R_BLUE.setEnabled(False)
@@ -166,9 +196,22 @@ class virtual_scopeWidget(ScriptedLoadableModuleWidget):
         self.joyController_RED_L.setup()
     
     def button_port_setter_toggled(self):
-        print('set')
         self.camera_port.setPortPosition()
-        self.camera_port_forceps.setPortPosition()
+        
+    def button_port_up_toggled(self):
+        self.camera_port.positionUp()
+        
+    def button_port_down_toggled(self):
+        self.camera_port.positionDown()
+        
+    def button_instrument_setter_toggled(self):
+        self.instrument_port.setPortPosition()
+        
+    def button_instrument_up_toggled(self):
+        self.instrument_port.positionUp()
+        
+    def button_instrument_down_toggled(self):
+        self.instrument_port.positionDown()
         
     def selectSkinNode(self, target):
         if target:
@@ -176,18 +219,24 @@ class virtual_scopeWidget(ScriptedLoadableModuleWidget):
             existingSegmentationNode = slicer.util.getNodesByClass('vtkMRMLSegmentationNode')
             for segmentationNode in existingSegmentationNode:
                 displayNode_ = segmentationNode.GetDisplayNode()
-                displayNode_.SetViewNodeIDs(['vtkMRMLViewNode1', 'vtkMRMLViewNode3'])
+                displayNode_.SetViewNodeIDs(['vtkMRMLViewNode1'])
                 displayNode_.SetVisibility(True)
             displayNode = target.GetDisplayNode()
-            displayNode.SetViewNodeIDs(['vtkMRMLViewNode2'])
+            displayNode.SetViewNodeIDs(['vtkMRMLViewNode2' , 'vtkMRMLViewNode3'])
             displayNode.SetVisibility(True)
     
     def view2_visble_button_toggled(self, checked):
         if checked:
             self.button1.setText('show')
+            if self.skinNode :
+                 displayNode = self.skinNode.GetDisplayNode()
+                 displayNode.SetVisibility(False)
             
         else:
             self.button1.setText('hide')    
+            if self.skinNode :
+                 displayNode = self.skinNode.GetDisplayNode()
+                 displayNode.SetVisibility(True)
         
     
     

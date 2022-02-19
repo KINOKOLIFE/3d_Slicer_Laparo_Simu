@@ -26,7 +26,6 @@ class Camera_Port():
         self.update(cameraPortMatrix)
     
     def update(self, camera_port_matrix):
-        camera_port_matrix [2,3]  +=  self.offsetZ
         self.cameraPortTransform.SetAndObserveMatrixTransformToParent(slicer.util.vtkMatrixFromArray(camera_port_matrix))
         
     def onPointsModified(self, observer=None, eventid=None):
@@ -42,14 +41,16 @@ class Camera_Port():
         self.fidNode.GetNthControlPointPosition(0, ras)  
         self.port_position[0] = ras[0]
         self.port_position[1] = ras[1]
-        self.port_position[2] = ras[2]
+        self.port_position[2] = ras[2] + self.offsetZ
         print(ras)
         
     def positionUp(self):
         self.offsetZ += 1
+        self.setPortPosition()
         
     def positionDown(self):
         self.offsetZ -= 1
+        self.setPortPosition()
         
 class Camera_Port2():
     def __init__(self):
@@ -76,7 +77,6 @@ class Camera_Port2():
         self.update(cameraPortMatrix)
         
     def update(self, camera_port_matrix):
-        camera_port_matrix [2,3]  +=  self.offsetZ
         self.cameraPortTransform.SetAndObserveMatrixTransformToParent(slicer.util.vtkMatrixFromArray(camera_port_matrix))
         
     def onPointsModified(self, observer=None, eventid=None):
@@ -92,11 +92,13 @@ class Camera_Port2():
         self.fidNode.GetNthControlPointPosition(0, ras)
         self.port_position[0] = ras[0]
         self.port_position[1] = ras[1]
-        self.port_position[2] = ras[2]
+        self.port_position[2] = ras[2] +  self.offsetZ
         print(ras)
         
     def positionUp(self):
         self.offsetZ += 1
+        self.setPortPosition()
         
     def positionDown(self):
         self.offsetZ -= 1
+        self.setPortPosition()

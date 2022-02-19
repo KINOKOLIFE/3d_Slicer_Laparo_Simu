@@ -42,6 +42,7 @@ class JoyController:
         self.joyconTransformNode.SetName('joyconRedTransformation')
         slicer.mrmlScene.AddNode(self.joyconTransformNode)
         self.modelNode = slicer.util.loadModel('/Users/takakiyoshiroshi/Documents/virtual_endoscope_project/3d_model/joyconRed_L/red_parts.obj')
+        #self.modelNode = slicer.util.loadModel('./3d_model/joyconRed_L/red_parts.obj')
         self.modelDisplayNode = self.modelNode.GetDisplayNode()
         self.modelDisplayNode.SetColor(0.5, 0.5, 0.5)
         self.modelNode.SetAndObserveTransformNodeID(self.joyconTransformNode.GetID())#0, 195, 227
